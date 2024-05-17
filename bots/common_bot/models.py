@@ -1,0 +1,1 @@
+from .main_bot.models import * # noqa
