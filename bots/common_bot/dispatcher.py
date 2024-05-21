@@ -1,10 +1,8 @@
 """
     Telegram event handlers
 """
-from django.conf import settings
-from telegram import Bot
 from telegram.ext import (
-    Dispatcher, CommandHandler, MessageHandler, CallbackQueryHandler, Filters, )
+    CommandHandler, MessageHandler, CallbackQueryHandler, Filters, ConversationHandler)
 
 from . import views
 from .default_handlers.admin import handlers as admin_handlers
@@ -16,10 +14,31 @@ from .default_handlers.language import handlers as language_handlers
 from .default_handlers.location import handlers as location_handlers
 from .default_handlers.onboarding import handlers as onboarding_handlers
 from .default_handlers.onboarding.manage_data import SECRET_LEVEL_BUTTON
-from .main_bot.bot import Bot_settings
+from .state import state
 
 
 def setup_dispatcher(dp):
+    states = {
+        state.ANOTHER: [
+            CommandHandler('start', views.start),
+        ],
+        # you can add more states here
+
+    }
+
+    entry_points = [CommandHandler('start', views.start), ]
+
+    fallbacks = [
+        MessageHandler(Filters.all, views.start),
+    ]
+    conversation_handler = ConversationHandler(
+        entry_points=entry_points,
+        states=states,
+        fallbacks=fallbacks,
+        persistent=True,
+        name="conversationbot",
+    )
+    dp.add_handler(conversation_handler)
     dp.add_handler(MessageHandler(Filters.update.channel_posts, onboarding_handlers.ignore_updates))
     dp.add_handler(MessageHandler(Filters.group, onboarding_handlers.ignore_updates))
     """
@@ -60,4 +79,3 @@ def setup_dispatcher(dp):
     dp.add_handler(CallbackQueryHandler(language_handlers.language_choice_handle, pattern="^language_setting_"))
 
     return dp
-
